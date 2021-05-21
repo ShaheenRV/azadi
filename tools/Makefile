@@ -17,9 +17,11 @@ LINK_FLAGS = -march=rv32i -mabi=ilp32 -static -nostdlib -nostartfiles -T $(TEST_
 OBJDUMP_PREFIX = $(RISCV_PREFIX)objdump
 OBJDUMP_FLAGS = --disassemble-all --disassemble-zeroes --section=.text --section=.text.startup --section=.text.init --section=.data
 VERILATOR = verilator
+XRUN = xrun
 
 
 TBFILES = $(AZADI_ROOT)/src/azadi_soc/rtl/Azadi_top_verilator.sv
+TBFILES_XRUN = $(AZADI_ROOT)/testbench/tb_top.sv
 # Package imports
 
 
@@ -62,6 +64,7 @@ clean:
 	rm -rf logs *.log *.s *.hex *.dis *.tbl irun* vcs* simv* snapshots \
 	verilator* *.exe obj* *.o ucli.key vc_hdrs.h csrc *.csv work
 
+################## Model Builds ###############################
 
 verilator-build: ${TBFILES} sim_main.cpp
 	$(VERILATOR) --cc -CFLAGS ${CFLAGS} $(defines) \
@@ -72,8 +75,19 @@ verilator-build: ${TBFILES} sim_main.cpp
 	$(MAKE) -C obj_dir/ -f VAzadi_top_verilator.mk $(VERILATOR_MAKE_FLAGS)
 	touch verilator-build
 
-verilator: verilator-build
+xrun-build: ${TBFILES_XRUN}
+	${XRUN} -elaborate -access +rwc -gui -q -sv -sysv \
+          ${DEFINES} \
+ 	  -f ${AZADI_ROOT}/tests/flist -top tb_top ${TBFILES_XRUN} \
+	  -snapshot azadi ${SNAPSHOT}
+	touch xrun-build
+
+#################### TEST Simulation Run ###############################
+
+verilator: build verilator-build
 	./obj_dir/VAzadi_top_verilator
+
+#################### TEST Build #######################################
 
 build:
 	@rm -rf $(TEST_DIR)/output 
@@ -90,6 +104,6 @@ help:
 	@echo Make sure the environment variable AZADI_ROOT is set.
 	@echo Possible targets: verilator vcs irun vlog help clean all verilator-build irun-build vcs-build program.hex
 
-.PHONY: help build clean verilator
+.PHONY: help build clean verilator xrun-build
 
 #riscv32-unknown-elf-elf2hex --bit-width 32 --input test --output prog.hex

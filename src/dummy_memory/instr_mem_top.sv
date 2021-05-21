@@ -29,7 +29,7 @@ sram #(
   .ADDR_WIDTH  (10),
   .DELAY       (0),
   .IZERO       (0),
-  .IFILE       ("/home/merl/github_repos/azadi/tests/prog")
+  .IFILE       ("../tests/prog")
 ) iccm (
   
   .clk0     (clk_i),
